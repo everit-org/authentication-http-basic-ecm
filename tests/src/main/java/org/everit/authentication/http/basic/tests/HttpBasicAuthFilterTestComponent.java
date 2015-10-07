@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.everit.authentication.http.basic.tests;
 
 import java.io.IOException;
@@ -13,14 +28,6 @@ import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.ConfigurationPolicy;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Properties;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,25 +40,38 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.everit.osgi.authentication.context.AuthenticationContext;
-import org.everit.osgi.authentication.simple.SimpleSubject;
-import org.everit.osgi.authentication.simple.SimpleSubjectManager;
+import org.everit.authentication.context.AuthenticationContext;
+import org.everit.authentication.simple.SimpleSubject;
+import org.everit.authentication.simple.SimpleSubjectManager;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
-import org.everit.osgi.resource.ResourceService;
+import org.everit.osgi.ecm.annotation.Activate;
+import org.everit.osgi.ecm.annotation.Component;
+import org.everit.osgi.ecm.annotation.ConfigurationPolicy;
+import org.everit.osgi.ecm.annotation.Deactivate;
+import org.everit.osgi.ecm.annotation.Service;
+import org.everit.osgi.ecm.annotation.ServiceRef;
+import org.everit.osgi.ecm.annotation.attribute.StringAttribute;
+import org.everit.osgi.ecm.annotation.attribute.StringAttributes;
+import org.everit.osgi.ecm.extender.ECMExtenderConstants;
+import org.everit.resource.ResourceService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
-@Component(name = "HttpBasicAuthFilterTest", metatype = true, configurationFactory = true,
-    policy = ConfigurationPolicy.REQUIRE, immediate = true)
-@Properties({
-    @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, value = "junit4"),
-    @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID,
-        value = "HttpBasicAuthFilterTest"),
-    @Property(name = "setSimpleSubjectManager.target"),
-    @Property(name = "authenticationContext.target"),
-    @Property(name = "helloWorldServlet.target"),
-    @Property(name = "httpBasicAuthenticationFilter.target")
+import aQute.bnd.annotation.headers.ProvideCapability;
+
+/**
+ * Test for HttpBasicAuthFilter.
+ */
+@Component(componentId = "HttpBasicAuthFilterTest",
+    configurationPolicy = ConfigurationPolicy.FACTORY)
+@ProvideCapability(ns = ECMExtenderConstants.CAPABILITY_NS_COMPONENT,
+    value = ECMExtenderConstants.CAPABILITY_ATTR_CLASS + "=${@class}")
+@StringAttributes({
+    @StringAttribute(attributeId = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE,
+        defaultValue = "junit4"),
+    @StringAttribute(attributeId = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID,
+        defaultValue = "HttpBasicAuthFilterTest")
 })
 @Service(value = HttpBasicAuthFilterTestComponent.class)
 public class HttpBasicAuthFilterTestComponent {
@@ -68,29 +88,27 @@ public class HttpBasicAuthFilterTestComponent {
 
   private long authenticatedResourceId;
 
-  @Reference(bind = "setAuthenticationContext")
   private AuthenticationContext authenticationContext;
 
   private long defaultResourceId;
 
-  @Reference(bind = "setHelloWorldServlet")
   private Servlet helloWorldServlet;
 
-  @Reference(bind = "setHttpBasicAuthenticationFilter")
   private Filter httpBasicAuthenticationFilter;
 
   private String publicUrl;
 
-  @Reference(bind = "setResourceService")
   private ResourceService resourceService;
 
   private String secureUrl;
 
-  @Reference(bind = "setSimpleSubjectManager")
   private SimpleSubjectManager simpleSubjectManager;
 
   private Server testServer;
 
+  /**
+   * Component activator method.
+   */
   @Activate
   public void activate(final BundleContext context, final Map<String, Object> componentProperties)
       throws Exception {
@@ -141,6 +159,9 @@ public class HttpBasicAuthFilterTestComponent {
     }
   }
 
+  /**
+   * Component deactivate method.
+   */
   @Deactivate
   public void deactivate() throws Exception {
     if (testServer != null) {
@@ -155,22 +176,27 @@ public class HttpBasicAuthFilterTestComponent {
     return encoded;
   }
 
+  @ServiceRef(defaultValue = "")
   public void setAuthenticationContext(final AuthenticationContext authenticationContext) {
     this.authenticationContext = authenticationContext;
   }
 
+  @ServiceRef(defaultValue = "")
   public void setHelloWorldServlet(final Servlet helloWorldServlet) {
     this.helloWorldServlet = helloWorldServlet;
   }
 
+  @ServiceRef(defaultValue = "")
   public void setHttpBasicAuthenticationFilter(final Filter httpBasicAuthenticationFilter) {
     this.httpBasicAuthenticationFilter = httpBasicAuthenticationFilter;
   }
 
+  @ServiceRef(defaultValue = "")
   public void setResourceService(final ResourceService resourceService) {
     this.resourceService = resourceService;
   }
 
+  @ServiceRef(defaultValue = "")
   public void setSimpleSubjectManager(final SimpleSubjectManager simpleSubjectManager) {
     this.simpleSubjectManager = simpleSubjectManager;
   }
