@@ -23,8 +23,6 @@ import java.util.Base64;
 import java.util.Base64.Encoder;
 import java.util.Map;
 
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
@@ -37,9 +35,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.everit.authentication.context.AuthenticationContext;
 import org.everit.authentication.simple.SimpleSubject;
 import org.everit.authentication.simple.SimpleSubjectManager;
@@ -47,7 +42,6 @@ import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.ecm.annotation.Activate;
 import org.everit.osgi.ecm.annotation.Component;
 import org.everit.osgi.ecm.annotation.ConfigurationPolicy;
-import org.everit.osgi.ecm.annotation.Deactivate;
 import org.everit.osgi.ecm.annotation.Service;
 import org.everit.osgi.ecm.annotation.ServiceRef;
 import org.everit.osgi.ecm.annotation.attribute.StringAttribute;
@@ -63,8 +57,7 @@ import aQute.bnd.annotation.headers.ProvideCapability;
 /**
  * Test for HttpBasicAuthFilter.
  */
-@Component(componentId = "HttpBasicAuthFilterTest",
-    configurationPolicy = ConfigurationPolicy.FACTORY)
+@Component(configurationPolicy = ConfigurationPolicy.OPTIONAL)
 @ProvideCapability(ns = ECMExtenderConstants.CAPABILITY_NS_COMPONENT,
     value = ECMExtenderConstants.CAPABILITY_ATTR_CLASS + "=${@class}")
 @StringAttributes({
@@ -75,8 +68,6 @@ import aQute.bnd.annotation.headers.ProvideCapability;
 })
 @Service(value = HttpBasicAuthFilterTestComponent.class)
 public class HttpBasicAuthFilterTestComponent {
-
-  private static final String HTTP_BASIC_AUTH_FILTER_PATTERN = "/hello/secure";
 
   private static final String PASSWORD = "open sesame";
 
@@ -92,19 +83,15 @@ public class HttpBasicAuthFilterTestComponent {
 
   private long defaultResourceId;
 
-  private Servlet helloWorldServlet;
-
-  private Filter httpBasicAuthenticationFilter;
-
   private String publicUrl;
 
   private ResourceService resourceService;
 
   private String secureUrl;
 
-  private SimpleSubjectManager simpleSubjectManager;
+  private Server server;
 
-  private Server testServer;
+  private SimpleSubjectManager simpleSubjectManager;
 
   /**
    * Component activator method.
@@ -112,20 +99,7 @@ public class HttpBasicAuthFilterTestComponent {
   @Activate
   public void activate(final BundleContext context, final Map<String, Object> componentProperties)
       throws Exception {
-    testServer = new Server(0);
-    ServletContextHandler servletContextHandler = new ServletContextHandler();
-    testServer.setHandler(servletContextHandler);
-
-    servletContextHandler.addServlet(
-        new ServletHolder("publichelloWorld", helloWorldServlet), PUBLIC_HELLO_WORLD_ALIAS);
-    servletContextHandler.addServlet(
-        new ServletHolder("securehelloWorld", helloWorldServlet), SECURE_HELLO_WORLD_ALIAS);
-    servletContextHandler.addFilter(
-        new FilterHolder(httpBasicAuthenticationFilter), HTTP_BASIC_AUTH_FILTER_PATTERN, null);
-
-    testServer.start();
-
-    String testServerURI = testServer.getURI().toString();
+    String testServerURI = server.getURI().toString();
     String testServerURL = testServerURI.substring(0, testServerURI.length() - 1);
 
     publicUrl = testServerURL + PUBLIC_HELLO_WORLD_ALIAS;
@@ -134,7 +108,7 @@ public class HttpBasicAuthFilterTestComponent {
     long resourceId = resourceService.createResource();
     simpleSubjectManager.delete(USERNAME);
     SimpleSubject simpleSubject = simpleSubjectManager.create(resourceId, USERNAME, PASSWORD);
-    authenticatedResourceId = simpleSubject.getResourceId();
+    authenticatedResourceId = simpleSubject.resourceId;
     defaultResourceId = authenticationContext.getDefaultResourceId();
   }
 
@@ -159,17 +133,6 @@ public class HttpBasicAuthFilterTestComponent {
     }
   }
 
-  /**
-   * Component deactivate method.
-   */
-  @Deactivate
-  public void deactivate() throws Exception {
-    if (testServer != null) {
-      testServer.stop();
-      testServer.destroy();
-    }
-  }
-
   private String encode(final String plain) {
     Encoder encoder = Base64.getEncoder();
     String encoded = encoder.encodeToString(plain.getBytes(StandardCharsets.UTF_8));
@@ -182,18 +145,13 @@ public class HttpBasicAuthFilterTestComponent {
   }
 
   @ServiceRef(defaultValue = "")
-  public void setHelloWorldServlet(final Servlet helloWorldServlet) {
-    this.helloWorldServlet = helloWorldServlet;
-  }
-
-  @ServiceRef(defaultValue = "")
-  public void setHttpBasicAuthenticationFilter(final Filter httpBasicAuthenticationFilter) {
-    this.httpBasicAuthenticationFilter = httpBasicAuthenticationFilter;
-  }
-
-  @ServiceRef(defaultValue = "")
   public void setResourceService(final ResourceService resourceService) {
     this.resourceService = resourceService;
+  }
+
+  @ServiceRef(defaultValue = "")
+  public void setServer(final Server server) {
+    this.server = server;
   }
 
   @ServiceRef(defaultValue = "")

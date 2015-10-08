@@ -36,8 +36,7 @@ import aQute.bnd.annotation.headers.ProvideCapability;
 /**
  * HelloWorld Servlet for test.
  */
-@Component(componentId = "HelloWorldServletComponent",
-    configurationPolicy = ConfigurationPolicy.FACTORY)
+@Component(configurationPolicy = ConfigurationPolicy.OPTIONAL)
 @ProvideCapability(ns = ECMExtenderConstants.CAPABILITY_NS_COMPONENT,
     value = ECMExtenderConstants.CAPABILITY_ATTR_CLASS + "=${@class}")
 @Service(Servlet.class)
@@ -52,7 +51,6 @@ public class HelloWorldServletComponent extends HttpServlet {
     resp.setContentType("text/plain");
     PrintWriter out = resp.getWriter();
     out.print(currentResourceId);
-
   }
 
   @ServiceRef(defaultValue = "")
