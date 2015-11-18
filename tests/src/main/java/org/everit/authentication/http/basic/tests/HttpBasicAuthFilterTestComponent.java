@@ -64,8 +64,7 @@ import aQute.bnd.annotation.headers.ProvideCapability;
     @StringAttribute(attributeId = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE,
         defaultValue = "junit4"),
     @StringAttribute(attributeId = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID,
-        defaultValue = "HttpBasicAuthFilterTest")
-})
+        defaultValue = "HttpBasicAuthFilterTest") })
 @Service(value = HttpBasicAuthFilterTestComponent.class)
 public class HttpBasicAuthFilterTestComponent {
 
